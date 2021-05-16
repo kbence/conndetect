@@ -32,11 +32,13 @@ func ParseEndpoint(endpoint string) (*Endpoint, error) {
 }
 
 // ParseTCPFile - Parses a file that's in the format of /proc/net/tcp
-func ParseTCPFile(r *bufio.Reader) (ConnectionList, error) {
+func ParseTCPFile(r io.Reader) (ConnectionList, error) {
 	var err error
 	var line []byte
 
-	_, _, err = r.ReadLine()
+	reader := bufio.NewReader(r)
+
+	_, _, err = reader.ReadLine()
 	if err != nil {
 		return nil, err
 	}
@@ -44,20 +46,21 @@ func ParseTCPFile(r *bufio.Reader) (ConnectionList, error) {
 	connections := ConnectionList{}
 
 	for err == nil {
-		line, _, err = r.ReadLine()
+		line, _, err = reader.ReadLine()
 
 		switch err {
 		case nil:
 			lineStr := string(line)
-			fields := fieldSeparator.Split(lineStr, 15)
+			entryStr := strings.SplitN(lineStr, ":", 2)[1]
+			fields := fieldSeparator.Split(entryStr, 15)
 
 			var src, dst *Endpoint
 
-			if src, err = ParseEndpoint(fields[2]); err != nil {
+			if src, err = ParseEndpoint(fields[1]); err != nil {
 				return nil, err
 			}
 
-			if dst, err = ParseEndpoint(fields[3]); err != nil {
+			if dst, err = ParseEndpoint(fields[2]); err != nil {
 				return nil, err
 			}
 
@@ -86,7 +89,7 @@ func ReadEstabilishedTCPConnections() (ConnectionList, error) {
 	}
 	defer file.Close()
 
-	connections, err := ParseTCPFile(bufio.NewReader(file))
+	connections, err := ParseTCPFile(file)
 
 	return filterConnections(
 		connections,
