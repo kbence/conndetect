@@ -34,6 +34,11 @@ type Connection struct {
 	Remote Endpoint
 }
 
+type DirectionalConnection struct {
+	Source      Endpoint
+	Destination Endpoint
+}
+
 type ConnectionList []Connection
 
 func (cl ConnectionList) ToMap() map[Connection]interface{} {
@@ -44,4 +49,9 @@ func (cl ConnectionList) ToMap() map[Connection]interface{} {
 	}
 
 	return connMap
+}
+
+type CategorizedConnections struct {
+	Established ConnectionList
+	Listening   ConnectionList
 }

@@ -38,8 +38,7 @@ func ParseTCPFile(r io.Reader) (ConnectionList, error) {
 
 	reader := bufio.NewReader(r)
 
-	_, _, err = reader.ReadLine()
-	if err != nil {
+	if _, _, err = reader.ReadLine(); err != nil {
 		return nil, err
 	}
 
@@ -80,21 +79,63 @@ func ParseTCPFile(r io.Reader) (ConnectionList, error) {
 
 // ReadEstabilishedTCPConnections - Reads /proc/net/tcp and returns
 // the slice of parsed connections
-func ReadEstabilishedTCPConnections() (ConnectionList, error) {
+func ReadEstablishedTCPConnections(fileName string) (*CategorizedConnections, error) {
 	var file *os.File
 	var err error
 
-	if file, err = os.Open("/proc/net/tcp"); err != nil {
+	if file, err = os.Open(fileName); err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
 	connections, err := ParseTCPFile(file)
+	catConnections := &CategorizedConnections{}
 
-	return filterConnections(
-		connections,
-		func(c Connection) bool {
-			return !c.Remote.IsUnbound()
-		},
-	), nil
+	for _, conn := range connections {
+		if conn.Remote.IsUnbound() {
+			catConnections.Listening = append(catConnections.Listening, conn)
+		} else {
+			catConnections.Established = append(catConnections.Established, conn)
+		}
+	}
+
+	return catConnections, nil
+}
+
+func CalculateDirection(listeners ConnectionList, conn Connection) DirectionalConnection {
+	// Let's see if we have an exact hit first
+	for _, l := range listeners {
+		if l.Local == conn.Remote {
+			return DirectionalConnection{Source: conn.Local, Destination: conn.Remote}
+		}
+
+		if l.Local == conn.Local {
+			return DirectionalConnection{Source: conn.Remote, Destination: conn.Local}
+		}
+	}
+
+	// Check if there's a listener on 0.0.0.0 for the same port
+	// Note: this is totally not right, since we don't have any
+	// information about what IP addresses this specific node has.
+
+	// TODO: parse it out from /proc/net/fib_trie and use that
+	// list instead of IP.IsUnspecified()!
+	for _, l := range listeners {
+		if l.Local.IP.IsUnspecified() && l.Local.Port == conn.Remote.Port {
+			return DirectionalConnection{Source: conn.Local, Destination: conn.Remote}
+		}
+
+		if l.Local.IP.IsUnspecified() && l.Local.Port == conn.Local.Port {
+			return DirectionalConnection{Source: conn.Remote, Destination: conn.Local}
+		}
+	}
+
+	// Assuming outgoing connection if the local port is ephemeral
+	if isEphemeralPort(conn.Local.Port) {
+		return DirectionalConnection{Source: conn.Local, Destination: conn.Remote}
+	}
+
+	// Assuming incoming connection if nothing else matches
+	// TODO: return an error and print a warning about it
+	return DirectionalConnection{Source: conn.Remote, Destination: conn.Local}
 }
