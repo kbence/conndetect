@@ -41,4 +41,4 @@ go run .
 ### Level 1
 
 - [x] Currently the program assumes that all connections are incoming, let's use the listening sockets that we drop now to identify the incoming ones. Note: 0.0.0.0 is a wildcard, we have to only match those by ports.
-- [ ] Make it a bit more configurable (low hanging fruit, but it'll be useful for testing)
+- [x] Make it a bit more configurable (low hanging fruit, but it'll be useful for testing)
