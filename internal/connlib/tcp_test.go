@@ -10,7 +10,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func Test(t *testing.T) { TestingT(t) }
+func TestProcNetTcp(t *testing.T) { TestingT(t) }
 
 type ProcNetTcpSuite struct{}
 
@@ -70,7 +70,7 @@ func (s *ProcNetTcpSuite) TestReadEstablishedTCPConnections(c *C) {
 	testFile := fmt.Sprintf("%s/tcp", c.MkDir())
 	ioutil.WriteFile(testFile, []byte(fileContents), 0644)
 
-	connections, err := ReadEstablishedTCPConnections(testFile)
+	connections, err := NewConnectionSource().ReadEstablishedTCPConnections(testFile)
 
 	c.Check(err, Equals, nil)
 	c.Check(len(connections.Established), Equals, 1)
@@ -80,7 +80,7 @@ func (s *ProcNetTcpSuite) TestReadEstablishedTCPConnections(c *C) {
 func (s *ProcNetTcpSuite) TestReadEstablishedTCPConnectionsFileDoesNotExist(c *C) {
 	testFile := fmt.Sprintf("%s/doesnotexist", c.MkDir())
 
-	connections, err := ReadEstablishedTCPConnections(testFile)
+	connections, err := NewConnectionSource().ReadEstablishedTCPConnections(testFile)
 
 	c.Check(err, FitsTypeOf, &fs.PathError{})
 	c.Check(connections, Equals, (*CategorizedConnections)(nil))
