@@ -36,9 +36,16 @@ Or you can also run it directly using `go` (from the root directory):
 go run .
 ```
 
-## Tasks remaining
+### Running in Docker
 
-### Level 1
+First, build the docker image:
 
-- [x] Currently the program assumes that all connections are incoming, let's use the listening sockets that we drop now to identify the incoming ones. Note: 0.0.0.0 is a wildcard, we have to only match those by ports.
-- [x] Make it a bit more configurable (low hanging fruit, but it'll be useful for testing)
+```shell
+docker build -t conndetect .
+```
+
+Then run the container with the following command. Make sure to pass `--network host` to get access to all the network activity.
+
+```shell
+docker run -it --rm --network host conndetect
+```
