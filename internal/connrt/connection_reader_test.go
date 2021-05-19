@@ -2,7 +2,6 @@ package connrt
 
 import (
 	"errors"
-	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/gookit/event"
@@ -12,11 +11,9 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func TestConnectionReader(t *testing.T) { TestingT(t) }
+var _ = Suite(&ConnectionReaderTestSuite{})
 
 type ConnectionReaderTestSuite struct{}
-
-var _ = Suite(&ConnectionReaderTestSuite{})
 
 func (s *ConnectionReaderTestSuite) TestNewConnectionReaderReturnsError(c *C) {
 	ctrl := gomock.NewController(c)

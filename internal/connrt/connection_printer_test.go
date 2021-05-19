@@ -11,11 +11,11 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func TestConnectionPrinter(t *testing.T) { TestingT(t) }
-
-type ConnectionPrinterTestSuite struct{}
+func Test(t *testing.T) { TestingT(t) }
 
 var _ = Suite(&ConnectionPrinterTestSuite{})
+
+type ConnectionPrinterTestSuite struct{}
 
 func (s *ConnectionPrinterTestSuite) TestConnectionPrinter(c *C) {
 	ctrl := gomock.NewController(c)

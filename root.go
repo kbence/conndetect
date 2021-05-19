@@ -14,7 +14,6 @@ import (
 )
 
 const PROC_NET_TCP_FILE = "/proc/net/tcp"
-const TIME_FORMAT = "2006-01-02 15:04:05"
 
 type rootCmdParameters struct {
 	Wait    int
