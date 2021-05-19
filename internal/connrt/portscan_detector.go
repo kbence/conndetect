@@ -117,8 +117,8 @@ func (d *PortscanDetector) reportScan(connection *connlib.DirectionalConnection,
 	d.printer.Printf(
 		"%s: Port scan detected: %s -> %s on ports %s\n",
 		d.time.Now().Format(TIME_FORMAT),
-		connection.Source.IP,
-		connection.Destination.IP,
+		connection.Source.IP.String(),
+		connection.Destination.IP.String(),
 		strings.Join(ports, ","),
 	)
 

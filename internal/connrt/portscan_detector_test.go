@@ -60,8 +60,8 @@ func (s *PortscanDetectorTestSuite) TestPortscanDetectorDetectsScan(c *C) {
 		EXPECT().
 		Printf("%s: Port scan detected: %s -> %s on ports %s\n",
 			"2021-05-19 09:59:34",
-			connlib.IPv4Address{1, 2, 3, 4},
-			connlib.IPv4Address{5, 6, 7, 8},
+			"1.2.3.4",
+			"5.6.7.8",
 			"80,443,1234")
 
 	detector.Handle(event.NewBasic("newConnection", event.M{"connection": s.newConnectionToPort(80)}))
@@ -92,8 +92,8 @@ func (s *PortscanDetectorTestSuite) TestPortscanDetectorReportsOnlyOnce(c *C) {
 		EXPECT().
 		Printf("%s: Port scan detected: %s -> %s on ports %s\n",
 			"2021-05-19 09:59:34",
-			connlib.IPv4Address{1, 2, 3, 4},
-			connlib.IPv4Address{5, 6, 7, 8},
+			"1.2.3.4",
+			"5.6.7.8",
 			"80,443,1234")
 
 	detector.Handle(event.NewBasic("newConnection", event.M{"connection": s.newConnectionToPort(80)}))
