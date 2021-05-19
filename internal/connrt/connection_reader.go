@@ -39,7 +39,7 @@ func NewConnectionReader(eventManager event.ManagerFace, fileName string, connSr
 		return nil, err
 	}
 
-	event.On("tick", event.ListenerFunc(reader.Handle))
+	eventManager.On("tick", event.ListenerFunc(reader.Handle))
 
 	return reader, nil
 }
@@ -61,7 +61,7 @@ func (r *ConnectionReader) Handle(event.Event) error {
 	for _, conn := range connections.Established {
 		if _, found := oldConnectionsMap[conn]; !found {
 			dirConn := connlib.CalculateDirection(connections.Listening, conn)
-			event.Fire("newConnection", event.M{"connection": dirConn})
+			r.eventManager.Fire("newConnection", event.M{"connection": dirConn})
 		}
 	}
 

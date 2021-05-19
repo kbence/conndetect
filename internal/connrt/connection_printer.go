@@ -13,7 +13,7 @@ type ConnectionPrinter struct {
 	time    utils.Time
 }
 
-func NewConnectionPrinter(eventManager *event.Manager) *ConnectionPrinter {
+func NewConnectionPrinter(eventManager event.ManagerFace) *ConnectionPrinter {
 	printer := &ConnectionPrinter{
 		Node: Node{eventManager: eventManager},
 
@@ -21,7 +21,7 @@ func NewConnectionPrinter(eventManager *event.Manager) *ConnectionPrinter {
 		time:    utils.NewTime(),
 	}
 
-	event.On("newConnection", event.ListenerFunc(printer.Handle))
+	eventManager.On("newConnection", event.ListenerFunc(printer.Handle))
 
 	return printer
 }

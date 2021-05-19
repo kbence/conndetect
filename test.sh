@@ -8,6 +8,6 @@ cd "$ROOT"
 
 go get -d .
 
-for path in $(find . -name '*_test.go' | sed 's/[^/]\+$//' | sort | uniq); do
+for path in $(find . -name '*_test.go' | sed 's#/[^/]*$##' | sort | uniq); do
     go test -count 1 "$path"
 done

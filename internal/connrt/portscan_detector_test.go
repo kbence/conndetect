@@ -16,6 +16,8 @@ var _ = Suite(&PortscanDetectorTestSuite{})
 
 type PortscanDetectorTestSuite struct{}
 
+var testPortscanSettings = NewPortscanSettings(3, 60*time.Second)
+
 func (s *PortscanDetectorTestSuite) newConnectionToPort(port int) connlib.DirectionalConnection {
 	return connlib.DirectionalConnection{
 		Source:      connlib.Endpoint{IP: connlib.IPv4Address{1, 2, 3, 4}, Port: uint16(30000 + rand.Int()%20000)},
@@ -23,15 +25,6 @@ func (s *PortscanDetectorTestSuite) newConnectionToPort(port int) connlib.Direct
 	}
 }
 
-func (s *PortscanDetectorTestSuite) newConnectionToPortFromRandomIP(port int) connlib.DirectionalConnection {
-	sourceIP := connlib.IPv4Address{byte(rand.Int() % 255), byte(rand.Int() % 255),
-		byte(rand.Int() % 255), byte(rand.Int() % 255)}
-
-	return connlib.DirectionalConnection{
-		Source:      connlib.Endpoint{IP: sourceIP, Port: uint16(30000 + rand.Int()%20000)},
-		Destination: connlib.Endpoint{IP: connlib.IPv4Address{5, 6, 7, 8}, Port: uint16(port)},
-	}
-}
 func (s *PortscanDetectorTestSuite) newRandomConnection() connlib.DirectionalConnection {
 	sourceIP := connlib.IPv4Address{byte(rand.Int() % 255), byte(rand.Int() % 255),
 		byte(rand.Int() % 255), byte(rand.Int() % 255)}
@@ -57,13 +50,15 @@ func (s *PortscanDetectorTestSuite) TestPortscanDetectorDetectsScan(c *C) {
 	printerMock := utils_mock.NewMockPrinter(ctrl)
 	timeMock := utils_mock.NewTimeTravelingMock(s.getTime("2021-05-19 09:59:34"))
 
-	detector := NewPortscanDetector(eventManagerMock)
+	eventManagerMock.EXPECT().On("newConnection", gomock.Any())
+
+	detector := NewPortscanDetector(eventManagerMock, testPortscanSettings)
 	detector.printer = printerMock
 	detector.time = timeMock
 
 	printerMock.
 		EXPECT().
-		Printf("%s: Port scan detected: %s -> %s on ports %s",
+		Printf("%s: Port scan detected: %s -> %s on ports %s\n",
 			"2021-05-19 09:59:34",
 			connlib.IPv4Address{1, 2, 3, 4},
 			connlib.IPv4Address{5, 6, 7, 8},
@@ -79,6 +74,39 @@ func (s *PortscanDetectorTestSuite) TestPortscanDetectorDetectsScan(c *C) {
 	c.Check(err, IsNil)
 }
 
+func (s *PortscanDetectorTestSuite) TestPortscanDetectorReportsOnlyOnce(c *C) {
+	ctrl := gomock.NewController(c)
+	defer ctrl.Finish()
+
+	eventManagerMock := ext_mock.NewMockManagerFace(ctrl)
+	printerMock := utils_mock.NewMockPrinter(ctrl)
+	timeMock := utils_mock.NewTimeTravelingMock(s.getTime("2021-05-19 09:59:34"))
+
+	eventManagerMock.EXPECT().On("newConnection", gomock.Any())
+
+	detector := NewPortscanDetector(eventManagerMock, testPortscanSettings)
+	detector.printer = printerMock
+	detector.time = timeMock
+
+	printerMock.
+		EXPECT().
+		Printf("%s: Port scan detected: %s -> %s on ports %s\n",
+			"2021-05-19 09:59:34",
+			connlib.IPv4Address{1, 2, 3, 4},
+			connlib.IPv4Address{5, 6, 7, 8},
+			"80,443,1234")
+
+	detector.Handle(event.NewBasic("newConnection", event.M{"connection": s.newConnectionToPort(80)}))
+	timeMock.ForwardBy(2 * time.Second)
+	detector.Handle(event.NewBasic("newConnection", event.M{"connection": s.newConnectionToPort(443)}))
+	timeMock.ForwardBy(57 * time.Second)
+	detector.Handle(event.NewBasic("newConnection", event.M{"connection": s.newConnectionToPort(1234)}))
+
+	err := detector.Handle(event.NewBasic("newConnection", event.M{"connection": s.newConnectionToPort(5432)}))
+
+	c.Check(err, IsNil)
+}
+
 func (s *PortscanDetectorTestSuite) TestPortscanDetectorDoesNothingOnConnectionsFromDifferentIPs(c *C) {
 	ctrl := gomock.NewController(c)
 	defer ctrl.Finish()
@@ -87,7 +115,9 @@ func (s *PortscanDetectorTestSuite) TestPortscanDetectorDoesNothingOnConnections
 	printerMock := utils_mock.NewMockPrinter(ctrl)
 	timeMock := utils_mock.NewTimeTravelingMock(s.getTime("2021-05-19 09:59:34"))
 
-	detector := NewPortscanDetector(eventManagerMock)
+	eventManagerMock.EXPECT().On("newConnection", gomock.Any())
+
+	detector := NewPortscanDetector(eventManagerMock, testPortscanSettings)
 	detector.printer = printerMock
 	detector.time = timeMock
 
@@ -109,7 +139,9 @@ func (s *PortscanDetectorTestSuite) TestPortscanDetectorDoesNothingOnRandomConne
 	printerMock := utils_mock.NewMockPrinter(ctrl)
 	timeMock := utils_mock.NewTimeTravelingMock(s.getTime("2021-05-19 09:59:34"))
 
-	detector := NewPortscanDetector(eventManagerMock)
+	eventManagerMock.EXPECT().On("newConnection", gomock.Any())
+
+	detector := NewPortscanDetector(eventManagerMock, testPortscanSettings)
 	detector.printer = printerMock
 	detector.time = timeMock
 

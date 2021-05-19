@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/gookit/event"
 	"github.com/kbence/conndetect/internal/connlib"
+	"github.com/kbence/conndetect/internal/ext_mock"
 	"github.com/kbence/conndetect/internal/utils_mock"
 	. "gopkg.in/check.v1"
 )
@@ -21,10 +22,13 @@ func (s *ConnectionPrinterTestSuite) TestConnectionPrinter(c *C) {
 	ctrl := gomock.NewController(c)
 	defer ctrl.Finish()
 
-	printer := NewConnectionPrinter(nil)
-
+	eventManagerMock := ext_mock.NewMockManagerFace(ctrl)
 	printerMock := utils_mock.NewMockPrinter(ctrl)
 	timeMock := utils_mock.NewMockTime(ctrl)
+
+	eventManagerMock.EXPECT().On("newConnection", gomock.Any())
+
+	printer := NewConnectionPrinter(eventManagerMock)
 	printer.printer = printerMock
 	printer.time = timeMock
 
@@ -48,10 +52,13 @@ func (s *ConnectionPrinterTestSuite) TestConnectionPrinterDoesNothingWithNoConne
 	ctrl := gomock.NewController(c)
 	defer ctrl.Finish()
 
-	printer := NewConnectionPrinter(nil)
-
+	eventManagerMock := ext_mock.NewMockManagerFace(ctrl)
 	printerMock := utils_mock.NewMockPrinter(ctrl)
 	timeMock := utils_mock.NewMockTime(ctrl)
+
+	eventManagerMock.EXPECT().On("newConnection", gomock.Any())
+
+	printer := NewConnectionPrinter(eventManagerMock)
 	printer.printer = printerMock
 	printer.time = timeMock
 
