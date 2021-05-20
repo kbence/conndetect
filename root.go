@@ -1,9 +1,14 @@
 package main
 
 import (
-	"time"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/gookit/event"
 	"github.com/kbence/conndetect/internal/connlib"
+	"github.com/kbence/conndetect/internal/connrt"
 	"github.com/kbence/conndetect/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -36,57 +41,32 @@ func newRootCmd() *rootCmdImpl {
 	}
 }
 
-func (c *rootCmdImpl) RunE() error {
-	var oldConnections, connections *connlib.CategorizedConnections
-	var err error
+func (c *rootCmdImpl) RunE(cmd *cobra.Command, args []string) error {
+	eventManager := event.NewManager("conndetect")
 
-	ticker := time.Tick(time.Duration(c.args.Wait) * time.Second)
+	ticker := connrt.NewTicker(eventManager, rootCmdArgs.Wait)
+	connrt.NewConnectionReader(eventManager, rootCmdArgs.TCPFile)
+	connrt.NewConnectionPrinter(eventManager)
 
-	if oldConnections, err = c.connectionSource.ReadEstablishedTCPConnections(c.args.TCPFile); err != nil {
-		return err
-	}
+	exitSignal := make(chan os.Signal)
+	signal.Notify(exitSignal, syscall.SIGINT)
+	signal.Notify(exitSignal, syscall.SIGTERM)
 
-mainLoop:
-	for {
-		// Note: although this has been added to make it easy to test, it'll
-		// also come handy if we want to handle signals in the future.
-		select {
-		case <-ticker:
-			break
-		case <-c.exit:
-			break mainLoop
-		}
+	go func() {
+		signal := <-exitSignal
+		fmt.Printf("Received signal '%s', exiting...\n", signal)
+		ticker.Stop()
+		event.Reset()
+	}()
 
-		if connections, err = c.connectionSource.ReadEstablishedTCPConnections(c.args.TCPFile); err != nil {
-			return err
-		}
-
-		oldConnectionsMap := oldConnections.Established.ToMap()
-
-		for _, conn := range connections.Established {
-			if _, found := oldConnectionsMap[conn]; !found {
-				dirConn := connlib.CalculateDirection(connections.Listening, conn)
-
-				c.printer.Printf(
-					"%s: New connection: %s -> %s\n",
-					c.time.Now().Format(TIME_FORMAT),
-					dirConn.Source.String(),
-					dirConn.Destination.String(),
-				)
-			}
-		}
-
-		oldConnections = connections
-	}
+	ticker.Run()
 
 	return nil
 }
 
 var rootCmd cobra.Command = cobra.Command{
-	Use: "conndetect",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return newRootCmd().RunE()
-	},
+	Use:  "conndetect",
+	RunE: newRootCmd().RunE,
 }
 
 func init() {
