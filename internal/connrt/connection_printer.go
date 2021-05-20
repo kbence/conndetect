@@ -21,7 +21,7 @@ func NewConnectionPrinter(eventManager event.ManagerFace) *ConnectionPrinter {
 		time:    utils.NewTime(),
 	}
 
-	eventManager.On("newConnection", event.ListenerFunc(printer.Handle))
+	eventManager.On(eventNewConnection, event.ListenerFunc(printer.Handle))
 
 	return printer
 }
