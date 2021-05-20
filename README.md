@@ -17,8 +17,8 @@ go get github.com/kbence/conndetect
 or
 
 ```shell
-git clone github.com:kbence/conndetect.git
-cd connetect
+git clone https://github.com/kbence/conndetect.git
+cd conndetect
 go get .
 ```
 
