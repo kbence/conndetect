@@ -62,7 +62,7 @@ func (s *ConnectionReaderTestSuite) TestConnectionReader(c *C) {
 	reader, _ := NewConnectionReader(eventManagerMock, "/path/to/tcp", connSrcMock)
 	reader.connectionSource = connSrcMock
 
-	err := reader.Handle(event.NewBasic("tick", event.M{}))
+	err := reader.Handle(event.NewBasic(eventTick, event.M{}))
 
 	c.Check(err, IsNil)
 }

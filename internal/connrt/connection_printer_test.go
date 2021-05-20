@@ -39,7 +39,7 @@ func (s *ConnectionPrinterTestSuite) TestConnectionPrinter(c *C) {
 		EXPECT().
 		Printf("%s: New connection: %s -> %s\n", "2021-05-17 12:34:56", "1.2.3.4:45678", "5.6.7.8:443")
 
-	err := printer.Handle(event.NewBasic("newConnection", event.M{"connection": connection}))
+	err := printer.Handle(event.NewBasic(eventNewConnection, event.M{"connection": connection}))
 
 	c.Check(err, IsNil)
 }
@@ -55,7 +55,7 @@ func (s *ConnectionPrinterTestSuite) TestConnectionPrinterDoesNothingWithNoConne
 	printer.printer = printerMock
 	printer.time = timeMock
 
-	err := printer.Handle(event.NewBasic("newConnection", event.M{}))
+	err := printer.Handle(event.NewBasic(eventNewConnection, event.M{}))
 
 	c.Check(err, IsNil)
 }

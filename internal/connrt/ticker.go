@@ -28,10 +28,10 @@ tickLoop:
 	for {
 		select {
 		case tm := <-ticker:
-			event.Fire("tick", event.M{"time": tm})
+			event.Fire(eventTick, event.M{"time": tm})
 			break
 		case <-t.exit:
-			event.Fire("exit", event.M{})
+			event.Fire(eventExit, event.M{})
 			break tickLoop
 		}
 	}
