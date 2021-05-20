@@ -13,7 +13,7 @@ type Ticker struct {
 	exit chan interface{}
 }
 
-func NewTicker(eventManager *event.Manager, wait int) *Ticker {
+func NewTicker(eventManager event.ManagerFace, wait int) *Ticker {
 	return &Ticker{
 		Node: Node{eventManager: eventManager},
 		wait: wait,
@@ -28,10 +28,11 @@ tickLoop:
 	for {
 		select {
 		case tm := <-ticker:
-			event.Fire(eventTick, event.M{"time": tm})
+			t.eventManager.Fire(eventTick, event.M{"time": tm})
 			break
+
 		case <-t.exit:
-			event.Fire(eventExit, event.M{})
+			t.eventManager.Fire(eventExit, event.M{})
 			break tickLoop
 		}
 	}

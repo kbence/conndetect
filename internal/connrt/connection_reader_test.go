@@ -2,7 +2,6 @@ package connrt
 
 import (
 	"errors"
-	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/gookit/event"
@@ -12,11 +11,9 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func TestConnectionReader(t *testing.T) { TestingT(t) }
+var _ = Suite(&ConnectionReaderTestSuite{})
 
 type ConnectionReaderTestSuite struct{}
-
-var _ = Suite(&ConnectionReaderTestSuite{})
 
 func (s *ConnectionReaderTestSuite) TestNewConnectionReaderReturnsError(c *C) {
 	ctrl := gomock.NewController(c)
@@ -26,6 +23,7 @@ func (s *ConnectionReaderTestSuite) TestNewConnectionReaderReturnsError(c *C) {
 	connSrcMock := connlib_mock.NewMockConnectionSource(ctrl)
 
 	expectedError := errors.New("some error")
+
 	connSrcMock.
 		EXPECT().
 		ReadEstablishedTCPConnections("/path/to/tcp").
@@ -49,6 +47,10 @@ func (s *ConnectionReaderTestSuite) TestConnectionReader(c *C) {
 			Remote: connlib.Endpoint{IP: connlib.IPv4Address{5, 6, 7, 8}, Port: 443},
 		},
 	}
+	expectedConnection := connlib.DirectionalConnection{
+		Source:      connections[0].Local,
+		Destination: connections[0].Remote,
+	}
 
 	connSrcMock.
 		EXPECT().
@@ -58,6 +60,8 @@ func (s *ConnectionReaderTestSuite) TestConnectionReader(c *C) {
 		EXPECT().
 		ReadEstablishedTCPConnections("/path/to/tcp").
 		Return(&connlib.CategorizedConnections{Established: connections}, nil)
+	eventManagerMock.EXPECT().On("tick", gomock.Any())
+	eventManagerMock.EXPECT().Fire("newConnection", event.M{"connection": expectedConnection})
 
 	reader, _ := NewConnectionReader(eventManagerMock, "/path/to/tcp", connSrcMock)
 	reader.connectionSource = connSrcMock

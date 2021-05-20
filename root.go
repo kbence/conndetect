@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gookit/event"
 	"github.com/kbence/conndetect/internal/connlib"
@@ -14,11 +15,13 @@ import (
 )
 
 const PROC_NET_TCP_FILE = "/proc/net/tcp"
-const TIME_FORMAT = "2006-01-02 15:04:05"
 
 type rootCmdParameters struct {
-	Wait    int
-	TCPFile string
+	Wait             int
+	TCPFile          string
+	PortScanInterval int
+	PortScanCount    int
+	PrometheusAddr   string
 }
 
 var rootCmdArgs = rootCmdParameters{}
@@ -47,10 +50,14 @@ func (c *rootCmdImpl) RunE(cmd *cobra.Command, args []string) error {
 	ticker := connrt.NewTicker(eventManager, rootCmdArgs.Wait)
 	connrt.NewConnectionReader(eventManager, rootCmdArgs.TCPFile)
 	connrt.NewConnectionPrinter(eventManager)
+	connrt.NewPortscanDetector(eventManager, connrt.NewPortscanSettings(3, 60*time.Second))
+	connrt.NewMetricsCounter(eventManager)
 
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT)
 	signal.Notify(exitSignal, syscall.SIGTERM)
+
+	startPrometheusEndpoint(rootCmdArgs.PrometheusAddr)
 
 	go func() {
 		signal := <-exitSignal
@@ -72,4 +79,7 @@ var rootCmd cobra.Command = cobra.Command{
 func init() {
 	rootCmd.Flags().IntVarP(&rootCmdArgs.Wait, "wait", "w", 10, "wait time between scans")
 	rootCmd.Flags().StringVarP(&rootCmdArgs.TCPFile, "tcp-file", "f", PROC_NET_TCP_FILE, "file to parse IPs out from")
+	rootCmd.Flags().IntVar(&rootCmdArgs.PortScanInterval, "portscan-interval", 60, "length of the interval the scan should detect")
+	rootCmd.Flags().IntVar(&rootCmdArgs.PortScanCount, "portscan-count", 3, "number of ports to alert")
+	rootCmd.Flags().StringVar(&rootCmdArgs.PrometheusAddr, "prometheus-addr", "", "address to bind prometheus endpoint (eg. \":8080\")")
 }
