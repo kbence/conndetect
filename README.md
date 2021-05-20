@@ -18,7 +18,7 @@ or
 
 ```shell
 git clone github.com:kbence/conndetect.git
-cd connetect
+cd conndetect
 go get .
 ```
 
